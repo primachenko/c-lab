@@ -1,0 +1,10 @@
+static: main.o libpwr.a
+	gcc main.o -L. -lpwr -o static
+libpwr.a: matem.o
+	ar rc libpwr.a matem.o
+main.o: main.c
+	gcc -c main.c
+matem.o: matem.c
+	gcc -c matem.c
+clean:
+	rm -f *.o *.a static
