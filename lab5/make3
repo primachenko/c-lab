@@ -1,0 +1,8 @@
+dynamic2: main2.c libpwr2.so
+	gcc main2.c -o dynamic2 -ldl
+libpwr2.so: matem.o
+	gcc -shared -o libpwr2.so matem.o
+matem.o: matem.c
+	gcc -c -fPIC matem.c
+clean:
+	rm -f *.o *.so dynamic2	
