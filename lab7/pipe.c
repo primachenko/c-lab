@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#define MAX_LEN 4
 
 // Умножение матрицы NxN на вектор Nx1 случайных чисел
 
@@ -13,49 +14,67 @@ void prtMtx(int*, int);
 void clear(int*, int*);
 
 int main(int argc, char const *argv[]){	
+	
 	printf("PARENT%d: start\n", getpid());
+	
 	int code, status;
 	int N;
 	printf("N = ");
 	scanf("%i", &N);
+
+	int d[N][2];
+	
+	for(int i = 0; i<N; i++){
+		if(pipe(d[i])==-1){
+			perror("Ошибка при открытиии канала");
+			exit(1);
+		}
+	}		
 	int *mtx;
 	pid_t pid[N];
-
-	int **A, *B;
+	int **A;
+	int *B;
 	int result;
 	A = (int**)malloc(N*sizeof(int*));
-	for(int i = 0; i < N; i++)
-		A[i] = (int*)malloc(N*sizeof(int)); //тут
-
+	// exit(0);
+	for(int k = 0; k < N; k++){
+		A[k]=(int*)malloc(N*sizeof(int));
+	}
 	B = (int*)malloc(N*sizeof(int));
 
 	filling(A, B, N);
-
 	for (int i = 0; i < N; i++){
 		pid[i]=fork();
 		if(pid[i]!=0){
 			printf("PARENT%d: fork CHILD%d\n", getpid(), pid[i]);
 		} else if (pid[i]==0){
+			// Код дочернего процесса
+			close(d[i][0]);
+			int res;
 			printf("  CHILD%d: start\n", getpid());
 	    	prt(A[i], B, N);
-	    	result=multiply(A[i], B, N);
-			printf("  CHILD%d: C = %i\n", getpid(), result);
-			clear(A, B);
-			exit(result);
+	    	res=multiply(A[i], B, N);
+			printf("  CHILD%d: C = %i\n", getpid(), res);
+			write(d[i][1], &res, sizeof(int));
+			clear(A[i], B);
+			exit(0);
 		}
 	}
 // Код родителя
 	mtx=malloc(N*sizeof(int));
 	for (int i = 0; i < N; i++) {
-        status = waitpid(pid[i], &code, 0);
-        if (pid[i] == status) {
-            printf("PARENT%d: CHILD%d done, result=%d\n", getpid(), pid[i], WEXITSTATUS(code));
-        	mtx[i]=WEXITSTATUS(code);
-        }
+		close(d[i][1]);
+		int res;
+        if (pid[i]==waitpid(pid[i], &code, 0)) {
+        	read(d[i][0], &res, sizeof(int));
+        	mtx[i]=res;
+            printf("PARENT%d: CHILD%d done, result=%d\n", getpid(), pid[i], mtx[i]);
+    	}
     }
     prtMtx(mtx, N);
     clear(A, B);
 	return 0;
+
 }
 // Умножение
 int multiply(int *A, int *B, int N){

@@ -2,7 +2,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <string.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#define MAX_LEN 4
+#define MAX_FIFO_NAME_LEN 1024
 
 // Умножение матрицы NxN на вектор Nx1 случайных чисел
 
@@ -18,44 +23,75 @@ int main(int argc, char const *argv[]){
 	int N;
 	printf("N = ");
 	scanf("%i", &N);
+
+	int pfd[N];
+	int fd[N]; //создание дескрипторов
+	char fifoName[N][MAX_FIFO_NAME_LEN];
+	char buf[MAX_FIFO_NAME_LEN];
+	for(int i = 0; i<N; i++){
+		sprintf(fifoName[i], "%s", "/tmp/FIFO");
+		// printf("%s\n", fifoName[i]);
+		unlink(fifoName[i]);
+		// printf("%s\n", fifoName[i]);
+		sprintf(buf, "%d%d",getpid(), i);
+		// printf("%s\n", fifoName[i]);
+		strcat(fifoName[i], buf);
+		// printf("%s\n", fifoName[i]);
+		if(mkfifo(fifoName[i], 0666) == -1){
+			printf("Невозможно создать fifo\n"); 
+			exit(1);
+		}; //создаем fifo
+		printf("PARENT%d: created %s\n",getpid(), fifoName[i]);
+	}
+	
 	int *mtx;
 	pid_t pid[N];
-
-	int **A, *B;
+	int **A;
+	int *B;
 	int result;
-	A = (int**)malloc(N*sizeof(int*));
-	for(int i = 0; i < N; i++)
-		A[i] = (int*)malloc(N*sizeof(int)); //тут
 
+	A = (int**)malloc(N*sizeof(int*));
+	for(int k = 0; k < N; k++){
+		A[k]=(int*)malloc(N*sizeof(int));
+	}
 	B = (int*)malloc(N*sizeof(int));
 
 	filling(A, B, N);
-
 	for (int i = 0; i < N; i++){
 		pid[i]=fork();
 		if(pid[i]!=0){
 			printf("PARENT%d: fork CHILD%d\n", getpid(), pid[i]);
 		} else if (pid[i]==0){
+			// Код дочернего процесса
+			// Код дочернего процесса
+			int res;
 			printf("  CHILD%d: start\n", getpid());
 	    	prt(A[i], B, N);
-	    	result=multiply(A[i], B, N);
-			printf("  CHILD%d: C = %i\n", getpid(), result);
-			clear(A, B);
-			exit(result);
+	    	res=multiply(A[i], B, N);
+			printf("  CHILD%d: C = %i\n", getpid(), res);
+			fd[i]=open(fifoName[i],O_WRONLY, 0);
+			write(fd[i], &res, sizeof(int));
+			close(fd[i]);
+			clear(A[i], B);
+			exit(res);
 		}
 	}
 // Код родителя
 	mtx=malloc(N*sizeof(int));
-	for (int i = 0; i < N; i++) {
-        status = waitpid(pid[i], &code, 0);
-        if (pid[i] == status) {
-            printf("PARENT%d: CHILD%d done, result=%d\n", getpid(), pid[i], WEXITSTATUS(code));
-        	mtx[i]=WEXITSTATUS(code);
-        }
+		for (int i = 0; i < N; i++) {
+		pfd[i]=open(fifoName[i], O_RDONLY|O_NONBLOCK, 0);
+		int res;
+        if (pid[i]==waitpid(pid[i], &code, 0)) {
+           	read(pfd[i], &res, sizeof(int));
+           	close(pfd[i]);
+        	mtx[i]=res;
+            printf("PARENT%d: CHILD%d done, result=%d\n", getpid(), pid[i], mtx[i]);
+    	}
     }
     prtMtx(mtx, N);
     clear(A, B);
 	return 0;
+
 }
 // Умножение
 int multiply(int *A, int *B, int N){
