@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
+#define SLEEP_TIME 2
 // Медоед и пчелы
 void *bear(void*);
 void *bee(void*);
@@ -57,13 +58,13 @@ void *bear(void *arg)
 	int eat = *pt;
 	for(;;){
 		// printf("Медоед спит\n");
-		sleep(5);
+		sleep(SLEEP_TIME);
 		// printf("Медоед проснулся, сейчас будет жрать\n");
 		pthread_mutex_lock(&hive.mutex);
 		if(hive.honey < eat){
 			pthread_mutex_unlock(&hive.mutex);
 			printf("ГДЕ МЕД??\n");
-			sleep(5);
+			sleep(SLEEP_TIME);
 			pthread_mutex_lock(&hive.mutex);
 			if(hive.honey < eat){
 				printf("Медоед скончался\n");
