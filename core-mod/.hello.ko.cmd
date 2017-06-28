@@ -1,0 +1,1 @@
+cmd_/home/oleg/lab/core-mod/hello.ko := ld -r -m elf_i386 -T ./scripts/module-common.lds --build-id  -o /home/oleg/lab/core-mod/hello.ko /home/oleg/lab/core-mod/hello.o /home/oleg/lab/core-mod/hello.mod.o ;  true

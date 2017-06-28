@@ -1,0 +1,53 @@
+Модули ядра
+
+Ресурсы:
+1. http://rus-linux.net/MyLDP/BOOKS/Moduli-yadra-Linux/kern-mod-index.html
+2. https://www.ibm.com/developerworks/ru/library/l-linux_kernel_01/index.html
+3. http://www.linuxcenter.ru/lib/books/lkmpg.phtml [3 глава]
+4. http://www.thegeekstuff.com/2013/07/write-linux-kernel-module/
+
+Алгоритм сборки и установки
+
+make -C /lib/modules/4.10.0-19-generic/build M=/home/oleg/a modules
+
+modinfo ./modname.ko //информация о модуле
+
+sudo insmod ./modname.ko //исполнение модуля
+
+
+file [filename] //информация о файле
+
+objdump //для анализа объектных файлов
+
+readelf -s //анализ elf структуры
+
+.ko обладает тремя дополнительными полями для загрузки в отличии от .o
+
+printk() первым аргументом идет 8 уровней сообщений
+
+для обновления конфигурации демона системного журналирования нужно его либо ребутнуть либо отправить сигнал SIGHUP
+
+без \n в printk получаем задерждку в одно сообщение
+
+
+netlink
+
+sysfs
+
+ioctl - принцип
+
+dev - тоже самое
+
+
+кросс почитать
+некрономикон
+
+
+zlib
+libffi
+glib
+ncourses
++
+mc
+
+--prefix ~/mc_mod
